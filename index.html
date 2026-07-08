@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Onboarding Tracker</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3248;
+      --accent: #6c63ff;
+      --accent-light: #8b84ff;
+      --green: #22c55e;
+      --yellow: #f59e0b;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --text: #e2e8f0;
+      --text-muted: #8892a4;
+      --text-dim: #4a5568;
+      --radius: 10px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 14px;
+    }
+
+    /* Layout */
+    .app { display: flex; height: 100vh; overflow: hidden; }
+
+    /* Sidebar */
+    .sidebar {
+      width: 240px;
+      flex-shrink: 0;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 20px 0;
+    }
+    .sidebar-logo {
+      padding: 0 20px 20px;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--accent-light);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+    .sidebar-logo svg { width: 22px; height: 22px; }
+    .sidebar-section { padding: 0 12px; margin-bottom: 4px; }
+    .sidebar-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      padding: 0 8px;
+      margin-bottom: 4px;
+    }
+    .sidebar-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 7px;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: background .15s, color .15s;
+      font-size: 13.5px;
+    }
+    .sidebar-item:hover { background: var(--surface2); color: var(--text); }
+    .sidebar-item.active { background: rgba(108,99,255,.15); color: var(--accent-light); font-weight: 500; }
+    .sidebar-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .sidebar-badge {
+      margin-left: auto;
+      background: var(--accent);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 600;
+      border-radius: 20px;
+      padding: 1px 7px;
+    }
+
+    /* Main */
+    .main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+
+    /* Top bar */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .topbar-title { font-size: 17px; font-weight: 600; flex: 1; }
+    .topbar-search {
+      position: relative;
+      flex: 0 0 260px;
+    }
+    .topbar-search input {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 7px 12px 7px 34px;
+      color: var(--text);
+      font-size: 13px;
+      outline: none;
+      transition: border-color .15s;
+    }
+    .topbar-search input:focus { border-color: var(--accent); }
+    .topbar-search svg {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 14px;
+      height: 14px;
+      color: var(--text-muted);
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border-radius: 7px;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: opacity .15s, transform .1s;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { opacity: .88; }
+    .btn-ghost {
+      background: var(--surface);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { color: var(--text); background: var(--surface2); }
+    .btn svg { width: 14px; height: 14px; }
+
+    /* Content */
+    .content { padding: 24px 28px; flex: 1; }
+
+    /* Stats row */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+    }
+    .stat-label { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; font-weight: 500; }
+    .stat-value { font-size: 28px; font-weight: 700; line-height: 1; }
+    .stat-sub { font-size: 12px; color: var(--text-dim); margin-top: 6px; }
+    .stat-sub span { color: var(--green); }
+    .stat-sub span.down { color: var(--red); }
+
+    /* Filter bar */
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+    .filter-tabs { display: flex; gap: 4px; }
+    .filter-tab {
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 12.5px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      transition: all .15s;
+    }
+    .filter-tab:hover { color: var(--text); }
+    .filter-tab.active {
+      background: rgba(108,99,255,.15);
+      border-color: rgba(108,99,255,.3);
+      color: var(--accent-light);
+      font-weight: 500;
+    }
+    .filter-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+    select.filter-select {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: 7px;
+      padding: 5px 10px;
+      font-size: 12.5px;
+      outline: none;
+      cursor: pointer;
+    }
+    select.filter-select:focus { border-color: var(--accent); }
+
+    /* Table */
+    .table-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    thead tr { border-bottom: 1px solid var(--border); }
+    th {
+      text-align: left;
+      padding: 11px 16px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+    th:hover { color: var(--text-muted); }
+    th .sort-icon { display: inline-block; margin-left: 4px; opacity: .4; }
+    th.sorted .sort-icon { opacity: 1; color: var(--accent-light); }
+    td { padding: 13px 16px; border-bottom: 1px solid rgba(46,50,72,.5); vertical-align: middle; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr { transition: background .12s; cursor: pointer; }
+    tbody tr:hover { background: var(--surface2); }
+
+    .customer-cell { display: flex; align-items: center; gap: 10px; }
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+    .customer-name { font-weight: 500; font-size: 13.5px; }
+    .customer-email { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+
+    /* Status badge */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 500;
+    }
+    .badge::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    .badge-notstarted { background: rgba(74,85,104,.2); color: #718096; }
+    .badge-inprogress { background: rgba(59,130,246,.15); color: #60a5fa; }
+    .badge-waitingcustomer { background: rgba(245,158,11,.15); color: #fbbf24; }
+    .badge-completed { background: rgba(34,197,94,.12); color: #4ade80; }
+    .badge-atrisk { background: rgba(239,68,68,.15); color: #f87171; }
+    .badge-churned { background: rgba(156,163,175,.1); color: #6b7280; }
+
+    /* Progress bar */
+    .progress-wrap { min-width: 100px; }
+    .progress-label { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 11px; color: var(--text-muted); }
+    .progress-bar { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 3px; transition: width .3s; }
+
+    /* CSM cell */
+    .csm-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12.5px;
+    }
+    .csm-dot {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      font-size: 10px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .health-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .days-cell { font-size: 13px; }
+
+    /* Empty */
+    .empty {
+      text-align: center;
+      padding: 64px 20px;
+      color: var(--text-muted);
+    }
+    .empty svg { width: 48px; height: 48px; margin-bottom: 12px; opacity: .3; }
+    .empty-title { font-size: 16px; font-weight: 600; margin-bottom: 6px; color: var(--text); opacity: .7; }
+    .empty-sub { font-size: 13px; }
+
+    /* Modal overlay */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.6);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s;
+    }
+    .overlay.open { opacity: 1; pointer-events: all; }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      width: 100%;
+      max-width: 580px;
+      max-height: 90vh;
+      overflow-y: auto;
+      transform: translateY(16px);
+      transition: transform .2s;
+    }
+    .overlay.open .modal { transform: translateY(0); }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 24px 18px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: var(--surface);
+      z-index: 1;
+    }
+    .modal-title { font-size: 16px; font-weight: 600; }
+    .modal-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      padding: 4px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      transition: color .15s, background .15s;
+    }
+    .modal-close:hover { color: var(--text); background: var(--surface2); }
+    .modal-close svg { width: 18px; height: 18px; }
+    .modal-body { padding: 20px 24px 24px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group.full { grid-column: 1/-1; }
+    label { font-size: 12px; font-weight: 500; color: var(--text-muted); }
+    input, select, textarea {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 8px 12px;
+      color: var(--text);
+      font-size: 13px;
+      outline: none;
+      transition: border-color .15s;
+      font-family: inherit;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+    textarea { resize: vertical; min-height: 72px; }
+    .form-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      margin-top: 6px;
+    }
+
+    /* Detail panel (right side) */
+    .detail-panel {
+      width: 0;
+      flex-shrink: 0;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      overflow: hidden;
+      transition: width .22s ease;
+    }
+    .detail-panel.open { width: 360px; }
+    .detail-inner { width: 360px; padding: 20px; }
+    .detail-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+    .detail-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      display: flex;
+      padding: 4px;
+      border-radius: 6px;
+    }
+    .detail-close:hover { color: var(--text); background: var(--surface2); }
+    .detail-close svg { width: 16px; height: 16px; }
+    .detail-name { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+    .detail-email { font-size: 12.5px; color: var(--text-muted); }
+    .detail-section { margin-bottom: 20px; }
+    .detail-section-title {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--text-dim);
+      margin-bottom: 10px;
+    }
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 7px 0;
+      border-bottom: 1px solid rgba(46,50,72,.4);
+      font-size: 13px;
+    }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-key { color: var(--text-muted); }
+    .detail-val { font-weight: 500; text-align: right; }
+
+    /* Checklist */
+    .checklist { display: flex; flex-direction: column; gap: 8px; }
+    .check-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .check-box {
+      width: 17px;
+      height: 17px;
+      border-radius: 4px;
+      border: 2px solid var(--border);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .15s;
+    }
+    .check-box.checked {
+      background: var(--green);
+      border-color: var(--green);
+    }
+    .check-box.checked svg { display: block; }
+    .check-box svg { display: none; width: 10px; height: 10px; color: #fff; }
+    .check-label.done { text-decoration: line-through; color: var(--text-dim); }
+
+    /* Note */
+    .note-area {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 10px 12px;
+      font-size: 12.5px;
+      color: var(--text-muted);
+      min-height: 60px;
+      outline: none;
+      width: 100%;
+      font-family: inherit;
+      resize: vertical;
+    }
+    .note-area:focus { border-color: var(--accent); }
+
+    /* Responsive */
+    @media (max-width: 1100px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 800px) {
+      .sidebar { width: 200px; }
+      .detail-panel.open { width: 300px; }
+      .detail-inner { width: 300px; }
+    }
+    @media (max-width: 640px) {
+      .sidebar { display: none; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    /* Tooltip */
+    [data-tip] { position: relative; }
+    [data-tip]:hover::after {
+      content: attr(data-tip);
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1a1d27;
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 5px;
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 99;
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      iii test
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Views</div>
+      <div class="sidebar-item active" onclick="setView('all')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        All Customers
+        <span class="sidebar-badge" id="badge-all">0</span>
+      </div>
+      <div class="sidebar-item" onclick="setView('inprogress')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        In Progress
+        <span class="sidebar-badge" id="badge-inprogress">0</span>
+      </div>
+      <div class="sidebar-item" onclick="setView('atrisk')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        At Risk
+        <span class="sidebar-badge" id="badge-atrisk" style="background:var(--red)">0</span>
+      </div>
+      <div class="sidebar-item" onclick="setView('completed')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        Completed
+        <span class="sidebar-badge" id="badge-completed" style="background:var(--green)">0</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section" style="margin-top:16px">
+      <div class="sidebar-label">Team</div>
+      <div id="csm-list"></div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <span class="topbar-title" id="view-title">All Customers</span>
+      <div class="topbar-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="search-input" placeholder="Search customers…" oninput="renderTable()" />
+      </div>
+      <button class="btn btn-primary" onclick="openModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Customer
+      </button>
+    </div>
+
+    <div class="content">
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total Customers</div>
+          <div class="stat-value" id="stat-total">—</div>
+          <div class="stat-sub"><span id="stat-total-sub"></span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Avg. Completion</div>
+          <div class="stat-value" id="stat-avg">—</div>
+          <div class="stat-sub">across active accounts</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">At Risk</div>
+          <div class="stat-value" style="color:var(--red)" id="stat-risk">—</div>
+          <div class="stat-sub" id="stat-risk-sub"></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Avg. Onboarding Days</div>
+          <div class="stat-value" id="stat-days">—</div>
+          <div class="stat-sub">median time-to-complete</div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="filter-bar">
+        <div class="filter-tabs">
+          <div class="filter-tab active" onclick="setStage('all', this)">All</div>
+          <div class="filter-tab" onclick="setStage('notstarted', this)">Not Started</div>
+          <div class="filter-tab" onclick="setStage('inprogress', this)">In Progress</div>
+          <div class="filter-tab" onclick="setStage('waitingcustomer', this)">Waiting</div>
+          <div class="filter-tab" onclick="setStage('completed', this)">Completed</div>
+          <div class="filter-tab" onclick="setStage('atrisk', this)">At Risk</div>
+        </div>
+        <div class="filter-right">
+          <select class="filter-select" id="sort-select" onchange="renderTable()">
+            <option value="name">Sort: Name</option>
+            <option value="progress">Sort: Progress</option>
+            <option value="days">Sort: Days Active</option>
+            <option value="health">Sort: Health</option>
+            <option value="arr">Sort: ARR</option>
+          </select>
+          <select class="filter-select" id="csm-filter" onchange="renderTable()">
+            <option value="">All CSMs</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>Status</th>
+              <th>Progress</th>
+              <th>Health</th>
+              <th>CSM</th>
+              <th>ARR</th>
+              <th>Days Active</th>
+              <th>Kick-off Date</th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detail Panel -->
+  <div class="detail-panel" id="detail-panel">
+    <div class="detail-inner">
+      <div class="detail-header">
+        <div>
+          <div class="detail-name" id="dp-name">—</div>
+          <div class="detail-email" id="dp-email">—</div>
+        </div>
+        <button class="detail-close" onclick="closeDetail()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-section-title">Overview</div>
+        <div class="detail-row"><span class="detail-key">Status</span><span class="detail-val" id="dp-status">—</span></div>
+        <div class="detail-row"><span class="detail-key">ARR</span><span class="detail-val" id="dp-arr">—</span></div>
+        <div class="detail-row"><span class="detail-key">Plan</span><span class="detail-val" id="dp-plan">—</span></div>
+        <div class="detail-row"><span class="detail-key">CSM</span><span class="detail-val" id="dp-csm">—</span></div>
+        <div class="detail-row"><span class="detail-key">Kick-off</span><span class="detail-val" id="dp-kickoff">—</span></div>
+        <div class="detail-row"><span class="detail-key">Target Go-live</span><span class="detail-val" id="dp-golive">—</span></div>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-section-title">Onboarding Checklist</div>
+        <div class="checklist" id="dp-checklist"></div>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-section-title">Notes</div>
+        <textarea class="note-area" id="dp-notes" placeholder="Add notes…" onblur="saveNote()"></textarea>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="editSelected()">Edit</button>
+        <button class="btn" style="flex:1;justify-content:center;background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.2)" onclick="deleteSelected()">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="overlay" id="modal-overlay" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">Add Customer</span>
+      <button class="modal-close" onclick="closeModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Company Name *</label>
+          <input type="text" id="f-name" placeholder="Acme Corp" />
+        </div>
+        <div class="form-group">
+          <label>Contact Email</label>
+          <input type="email" id="f-email" placeholder="jane@acme.com" />
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="f-status">
+            <option value="notstarted">Not Started</option>
+            <option value="inprogress">In Progress</option>
+            <option value="waitingcustomer">Waiting on Customer</option>
+            <option value="completed">Completed</option>
+            <option value="atrisk">At Risk</option>
+            <option value="churned">Churned</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Plan</label>
+          <select id="f-plan">
+            <option value="Starter">Starter</option>
+            <option value="Growth">Growth</option>
+            <option value="Business">Business</option>
+            <option value="Enterprise">Enterprise</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>ARR ($)</label>
+          <input type="number" id="f-arr" placeholder="24000" min="0" />
+        </div>
+        <div class="form-group">
+          <label>CSM</label>
+          <select id="f-csm">
+            <option value="Alex Kim">Alex Kim</option>
+            <option value="Mia Torres">Mia Torres</option>
+            <option value="Jordan Lee">Jordan Lee</option>
+            <option value="Sam Patel">Sam Patel</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Kick-off Date</label>
+          <input type="date" id="f-kickoff" />
+        </div>
+        <div class="form-group">
+          <label>Target Go-live</label>
+          <input type="date" id="f-golive" />
+        </div>
+        <div class="form-group">
+          <label>Health</label>
+          <select id="f-health">
+            <option value="green">Green</option>
+            <option value="yellow">Yellow</option>
+            <option value="red">Red</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Progress (%)</label>
+          <input type="number" id="f-progress" min="0" max="100" placeholder="0" />
+        </div>
+        <div class="form-group full">
+          <label>Notes</label>
+          <textarea id="f-notes" placeholder="Kickoff went well, awaiting IT access…"></textarea>
+        </div>
+      </div>
+      <div class="form-footer">
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveCustomer()">Save Customer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+const CHECKLIST_STEPS = [
+  'Kick-off call completed',
+  'Stakeholders identified',
+  'Technical setup started',
+  'Data import / migration',
+  'User training scheduled',
+  'Integration configured',
+  'User acceptance testing',
+  'Go-live signed off',
+];
+
+const CSM_COLORS = {
+  'Alex Kim':    { bg: '#3b82f620', color: '#60a5fa' },
+  'Mia Torres':  { bg: '#a855f720', color: '#c084fc' },
+  'Jordan Lee':  { bg: '#f59e0b20', color: '#fbbf24' },
+  'Sam Patel':   { bg: '#22c55e20', color: '#4ade80' },
+};
+
+const AVATARS = ['#6c63ff','#3b82f6','#f59e0b','#22c55e','#ef4444','#a855f7','#14b8a6','#f97316'];
+
+let customers = [
+  { id:1, name:'Bright Layer Inc', email:'ops@brightlayer.io', status:'inprogress', plan:'Enterprise', arr:120000, csm:'Alex Kim', kickoff:'2026-04-10', golive:'2026-07-01', health:'green', progress:65, checklist:[1,1,1,1,1,0,0,0], notes:'Great engagement from IT team. Slack integration in progress.' },
+  { id:2, name:'Nomad Works', email:'hello@nomadworks.co', status:'waitingcustomer', plan:'Business', arr:48000, csm:'Mia Torres', kickoff:'2026-03-18', golive:'2026-06-15', health:'yellow', progress:40, checklist:[1,1,1,0,0,0,0,0], notes:'Waiting on legal to approve DPA. Follow up Friday.' },
+  { id:3, name:'Sprout Analytics', email:'cto@sproutanalytics.com', status:'atrisk', plan:'Growth', arr:24000, csm:'Jordan Lee', kickoff:'2026-02-05', golive:'2026-05-01', health:'red', progress:30, checklist:[1,1,0,0,0,0,0,0], notes:'Champion left the company. New stakeholder unresponsive.' },
+  { id:4, name:'Tidal Finance', email:'pm@tidalfinance.io', status:'completed', plan:'Enterprise', arr:200000, csm:'Alex Kim', kickoff:'2025-12-01', golive:'2026-03-15', health:'green', progress:100, checklist:[1,1,1,1,1,1,1,1], notes:'Smooth launch. Expansion conversation scheduled for Q3.' },
+  { id:5, name:'Mosaic Health', email:'it@mosaichealth.org', status:'inprogress', plan:'Business', arr:72000, csm:'Sam Patel', kickoff:'2026-05-01', golive:'2026-08-01', health:'green', progress:20, checklist:[1,1,0,0,0,0,0,0], notes:'Early stage. Very engaged procurement team.' },
+  { id:6, name:'Ember Robotics', email:'dev@emberrobotics.ai', status:'notstarted', plan:'Starter', arr:12000, csm:'Mia Torres', kickoff:'2026-06-20', golive:'2026-09-01', health:'green', progress:0, checklist:[0,0,0,0,0,0,0,0], notes:'' },
+  { id:7, name:'Cascade Labs', email:'admin@cascadelabs.dev', status:'inprogress', plan:'Growth', arr:36000, csm:'Jordan Lee', kickoff:'2026-04-22', golive:'2026-07-22', health:'yellow', progress:55, checklist:[1,1,1,1,0,0,0,0], notes:'Training scheduled for next week. Some config issues flagged.' },
+  { id:8, name:'Dune Capital', email:'tech@dunecapital.com', status:'atrisk', plan:'Enterprise', arr:180000, csm:'Sam Patel', kickoff:'2026-01-15', golive:'2026-04-30', health:'red', progress:70, checklist:[1,1,1,1,1,0,0,0], notes:'Go-live slipped twice. Exec sponsor engaged.' },
+];
+let nextId = 9;
+let activeView = 'all';
+let activeStage = 'all';
+let selectedId = null;
+let editingId = null;
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function fmtARR(v) {
+  if (!v) return '—';
+  if (v >= 1000000) return '$' + (v/1000000).toFixed(1) + 'M';
+  if (v >= 1000) return '$' + (v/1000).toFixed(0) + 'K';
+  return '$' + v;
+}
+function daysActive(kickoff) {
+  if (!kickoff) return 0;
+  const d = Math.floor((new Date() - new Date(kickoff)) / 86400000);
+  return Math.max(0, d);
+}
+function fmtDate(d) {
+  if (!d) return '—';
+  const [y,m,day] = d.split('-');
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${months[parseInt(m)-1]} ${parseInt(day)}, ${y}`;
+}
+function initials(name) {
+  return name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+}
+function avatarColor(name) {
+  let h = 0; for(let c of name) h = (h * 31 + c.charCodeAt(0)) & 0xffff;
+  return AVATARS[h % AVATARS.length];
+}
+function statusLabel(s) {
+  return { notstarted:'Not Started', inprogress:'In Progress', waitingcustomer:'Waiting', completed:'Completed', atrisk:'At Risk', churned:'Churned' }[s] || s;
+}
+function healthColor(h) {
+  return { green: 'var(--green)', yellow: 'var(--yellow)', red: 'var(--red)' }[h] || 'var(--text-dim)';
+}
+function progressColor(p) {
+  if (p >= 75) return 'var(--green)';
+  if (p >= 40) return '#3b82f6';
+  return 'var(--yellow)';
+}
+
+// ── Stats ──────────────────────────────────────────────────────────────────
+function updateStats() {
+  const all = customers;
+  const active = all.filter(c => c.status !== 'churned' && c.status !== 'completed');
+  const atRisk = all.filter(c => c.status === 'atrisk');
+  const completed = all.filter(c => c.status === 'completed');
+  const avgP = active.length ? Math.round(active.reduce((s,c)=>s+c.progress,0)/active.length) : 0;
+
+  // Median days for completed
+  const compDays = completed.map(c => daysActive(c.kickoff)).sort((a,b)=>a-b);
+  const medDays = compDays.length ? compDays[Math.floor(compDays.length/2)] : '—';
+
+  document.getElementById('stat-total').textContent = all.length;
+  document.getElementById('stat-total-sub').textContent = '';
+  document.getElementById('stat-avg').textContent = active.length ? avgP + '%' : '—';
+  document.getElementById('stat-risk').textContent = atRisk.length;
+  document.getElementById('stat-risk-sub').textContent = atRisk.length ? atRisk.map(c=>c.name.split(' ')[0]).join(', ') : 'All good!';
+  document.getElementById('stat-days').textContent = typeof medDays === 'number' ? medDays + 'd' : '—';
+
+  // Sidebar badges
+  document.getElementById('badge-all').textContent = all.length;
+  document.getElementById('badge-inprogress').textContent = all.filter(c=>c.status==='inprogress').length;
+  document.getElementById('badge-atrisk').textContent = atRisk.length;
+  document.getElementById('badge-completed').textContent = completed.length;
+}
+
+// ── Sidebar CSMs ───────────────────────────────────────────────────────────
+function renderCSMList() {
+  const csms = [...new Set(customers.map(c=>c.csm))].sort();
+  const list = document.getElementById('csm-list');
+  list.innerHTML = csms.map(csm => {
+    const col = CSM_COLORS[csm] || { bg:'#6c63ff20', color:'#8b84ff' };
+    const count = customers.filter(c=>c.csm===csm).length;
+    return `<div class="sidebar-item" onclick="filterCSM('${csm}', this)">
+      <div class="csm-dot" style="background:${col.bg};color:${col.color}">${initials(csm)}</div>
+      ${csm.split(' ')[0]}
+      <span class="sidebar-badge" style="background:${col.color}20;color:${col.color}">${count}</span>
+    </div>`;
+  }).join('');
+
+  // Update CSM filter dropdown
+  const sel = document.getElementById('csm-filter');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">All CSMs</option>' +
+    csms.map(c=>`<option value="${c}" ${c===cur?'selected':''}>${c}</option>`).join('');
+}
+
+function filterCSM(csm, el) {
+  document.getElementById('csm-filter').value = csm;
+  document.querySelectorAll('.sidebar-item').forEach(i=>i.classList.remove('active'));
+  el.classList.add('active');
+  renderTable();
+}
+
+// ── View / Stage ───────────────────────────────────────────────────────────
+function setView(view) {
+  activeView = view;
+  activeStage = 'all';
+  // update filter tabs to all
+  document.querySelectorAll('.filter-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelector('.filter-tab').classList.add('active');
+
+  document.querySelectorAll('.sidebar-item').forEach(i=>i.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+
+  const titles = { all:'All Customers', inprogress:'In Progress', atrisk:'At Risk', completed:'Completed' };
+  document.getElementById('view-title').textContent = titles[view] || 'Customers';
+  renderTable();
+}
+
+function setStage(stage, el) {
+  activeStage = stage;
+  document.querySelectorAll('.filter-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderTable();
+}
+
+// ── Table ──────────────────────────────────────────────────────────────────
+function getFiltered() {
+  const search = document.getElementById('search-input').value.trim().toLowerCase();
+  const csmF = document.getElementById('csm-filter').value;
+  const sort = document.getElementById('sort-select').value;
+
+  let list = customers.filter(c => {
+    if (activeView !== 'all' && c.status !== activeView) return false;
+    if (activeStage !== 'all' && c.status !== activeStage) return false;
+    if (csmF && c.csm !== csmF) return false;
+    if (search && !c.name.toLowerCase().includes(search) && !c.email.toLowerCase().includes(search)) return false;
+    return true;
+  });
+
+  list.sort((a,b) => {
+    if (sort === 'progress') return b.progress - a.progress;
+    if (sort === 'days') return daysActive(b.kickoff) - daysActive(a.kickoff);
+    if (sort === 'health') {
+      const rank = {red:0,yellow:1,green:2};
+      return (rank[a.health]||2)-(rank[b.health]||2);
+    }
+    if (sort === 'arr') return (b.arr||0)-(a.arr||0);
+    return a.name.localeCompare(b.name);
+  });
+  return list;
+}
+
+function renderTable() {
+  updateStats();
+  renderCSMList();
+  const list = getFiltered();
+  const tbody = document.getElementById('table-body');
+
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <div class="empty-title">No customers found</div>
+      <div class="empty-sub">Try adjusting your filters or add a new customer.</div>
+    </div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(c => {
+    const color = avatarColor(c.name);
+    const csmCol = CSM_COLORS[c.csm] || { bg:'#6c63ff20', color:'#8b84ff' };
+    const days = daysActive(c.kickoff);
+    const pColor = progressColor(c.progress);
+    const hColor = healthColor(c.health);
+    const isSelected = c.id === selectedId;
+
+    return `<tr onclick="selectCustomer(${c.id})" style="${isSelected ? 'background:var(--surface2)' : ''}">
+      <td>
+        <div class="customer-cell">
+          <div class="avatar" style="background:${color}20;color:${color}">${initials(c.name)}</div>
+          <div>
+            <div class="customer-name">${esc(c.name)}</div>
+            <div class="customer-email">${esc(c.email)}</div>
+          </div>
+        </div>
+      </td>
+      <td><span class="badge badge-${c.status}">${statusLabel(c.status)}</span></td>
+      <td>
+        <div class="progress-wrap">
+          <div class="progress-label"><span>${c.progress}%</span><span>${c.checklist.filter(v=>v).length}/${CHECKLIST_STEPS.length}</span></div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${c.progress}%;background:${pColor}"></div></div>
+        </div>
+      </td>
+      <td><span class="health-dot" style="background:${hColor}" data-tip="${c.health.charAt(0).toUpperCase()+c.health.slice(1)}"></span></td>
+      <td>
+        <div class="csm-chip">
+          <div class="csm-dot" style="background:${csmCol.bg};color:${csmCol.color}">${initials(c.csm)}</div>
+          ${c.csm.split(' ')[0]}
+        </div>
+      </td>
+      <td style="font-weight:500">${fmtARR(c.arr)}</td>
+      <td class="days-cell">${days}d</td>
+      <td style="color:var(--text-muted)">${fmtDate(c.kickoff)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Detail Panel ───────────────────────────────────────────────────────────
+function selectCustomer(id) {
+  selectedId = id;
+  const c = customers.find(x=>x.id===id);
+  if (!c) return;
+
+  document.getElementById('detail-panel').classList.add('open');
+  document.getElementById('dp-name').textContent = c.name;
+  document.getElementById('dp-email').textContent = c.email || '—';
+  document.getElementById('dp-status').innerHTML = `<span class="badge badge-${c.status}">${statusLabel(c.status)}</span>`;
+  document.getElementById('dp-arr').textContent = fmtARR(c.arr);
+  document.getElementById('dp-plan').textContent = c.plan || '—';
+  document.getElementById('dp-csm').textContent = c.csm || '—';
+  document.getElementById('dp-kickoff').textContent = fmtDate(c.kickoff);
+  document.getElementById('dp-golive').textContent = fmtDate(c.golive);
+  document.getElementById('dp-notes').value = c.notes || '';
+
+  // Checklist
+  const cl = document.getElementById('dp-checklist');
+  cl.innerHTML = CHECKLIST_STEPS.map((step, i) => {
+    const done = c.checklist[i];
+    return `<div class="check-item" onclick="toggleCheck(${c.id},${i})">
+      <div class="check-box ${done?'checked':''}">
+        <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="2 6 5 9 10 3"/></svg>
+      </div>
+      <span class="check-label ${done?'done':''}">${step}</span>
+    </div>`;
+  }).join('');
+
+  renderTable();
+}
+
+function closeDetail() {
+  selectedId = null;
+  document.getElementById('detail-panel').classList.remove('open');
+  renderTable();
+}
+
+function toggleCheck(id, idx) {
+  const c = customers.find(x=>x.id===id);
+  if (!c) return;
+  c.checklist[idx] = c.checklist[idx] ? 0 : 1;
+  // Auto-update progress from checklist
+  const done = c.checklist.filter(v=>v).length;
+  c.progress = Math.round((done / CHECKLIST_STEPS.length) * 100);
+  selectCustomer(id);
+}
+
+function saveNote() {
+  if (!selectedId) return;
+  const c = customers.find(x=>x.id===selectedId);
+  if (c) c.notes = document.getElementById('dp-notes').value;
+}
+
+// ── Modal ──────────────────────────────────────────────────────────────────
+function openModal(id = null) {
+  editingId = id;
+  document.getElementById('modal-title').textContent = id ? 'Edit Customer' : 'Add Customer';
+  const overlay = document.getElementById('modal-overlay');
+
+  if (id) {
+    const c = customers.find(x=>x.id===id);
+    if (!c) return;
+    document.getElementById('f-name').value = c.name;
+    document.getElementById('f-email').value = c.email;
+    document.getElementById('f-status').value = c.status;
+    document.getElementById('f-plan').value = c.plan;
+    document.getElementById('f-arr').value = c.arr || '';
+    document.getElementById('f-csm').value = c.csm;
+    document.getElementById('f-kickoff').value = c.kickoff || '';
+    document.getElementById('f-golive').value = c.golive || '';
+    document.getElementById('f-health').value = c.health;
+    document.getElementById('f-progress').value = c.progress;
+    document.getElementById('f-notes').value = c.notes || '';
+  } else {
+    document.getElementById('f-name').value = '';
+    document.getElementById('f-email').value = '';
+    document.getElementById('f-status').value = 'notstarted';
+    document.getElementById('f-plan').value = 'Growth';
+    document.getElementById('f-arr').value = '';
+    document.getElementById('f-csm').value = 'Alex Kim';
+    document.getElementById('f-kickoff').value = '';
+    document.getElementById('f-golive').value = '';
+    document.getElementById('f-health').value = 'green';
+    document.getElementById('f-progress').value = '0';
+    document.getElementById('f-notes').value = '';
+  }
+
+  overlay.classList.add('open');
+  setTimeout(() => document.getElementById('f-name').focus(), 100);
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  editingId = null;
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+}
+
+function saveCustomer() {
+  const name = document.getElementById('f-name').value.trim();
+  if (!name) { document.getElementById('f-name').focus(); return; }
+
+  const data = {
+    name,
+    email: document.getElementById('f-email').value.trim(),
+    status: document.getElementById('f-status').value,
+    plan: document.getElementById('f-plan').value,
+    arr: parseInt(document.getElementById('f-arr').value) || 0,
+    csm: document.getElementById('f-csm').value,
+    kickoff: document.getElementById('f-kickoff').value,
+    golive: document.getElementById('f-golive').value,
+    health: document.getElementById('f-health').value,
+    progress: Math.min(100, Math.max(0, parseInt(document.getElementById('f-progress').value) || 0)),
+    notes: document.getElementById('f-notes').value.trim(),
+  };
+
+  if (editingId) {
+    const c = customers.find(x=>x.id===editingId);
+    if (c) Object.assign(c, data);
+  } else {
+    customers.push({ id: nextId++, checklist: Array(CHECKLIST_STEPS.length).fill(0), ...data });
+  }
+
+  closeModal();
+  renderTable();
+  if (selectedId) selectCustomer(selectedId);
+}
+
+function editSelected() {
+  if (!selectedId) return;
+  openModal(selectedId);
+}
+
+function deleteSelected() {
+  if (!selectedId) return;
+  const c = customers.find(x=>x.id===selectedId);
+  if (!c) return;
+  if (!confirm(`Delete ${c.name}?`)) return;
+  customers = customers.filter(x=>x.id!==selectedId);
+  closeDetail();
+  renderTable();
+}
+
+// ── Keyboard ───────────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if (document.getElementById('modal-overlay').classList.contains('open')) { closeModal(); return; }
+    if (selectedId) { closeDetail(); return; }
+  }
+  if (e.key === 'n' && !e.ctrlKey && !e.metaKey && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+    openModal();
+  }
+});
+
+// ── Init ───────────────────────────────────────────────────────────────────
+renderTable();
+</script>
+</body>
+</html>
